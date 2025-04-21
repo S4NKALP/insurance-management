@@ -1,0 +1,581 @@
+{% extends 'admin/base_site.html' %}
+{% load static %}
+
+{% block extrastyle %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<style>
+    :root {
+        --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        --info-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        --warning-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        --card-bg: rgba(255, 255, 255, 0.95);
+    }
+
+    body {
+        background: radial-gradient(circle at top right, #f0f9ff 0%, #e0f2fe 100%);
+        min-height: 100vh;
+    }
+
+    .dashboard-header {
+        background: var(--card-bg);
+        border-radius: 24px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    .display-5 {
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: 700;
+    }
+
+    .metric-card {
+        position: relative;
+        border-radius: 20px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+
+    .metric-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: rgba(255, 255, 255, 0.1);
+        transform: rotate(45deg);
+        pointer-events: none;
+        transition: all 0.6s ease;
+    }
+
+    .policy-card { background: var(--primary-gradient); }
+    .premium-card { background: var(--success-gradient); }
+    .agent-card { background: var(--info-gradient); }
+    .outstanding-card { background: var(--warning-gradient); }
+
+    .metric-icon {
+        font-size: 2.5rem;
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 15px;
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(5px);
+        margin-bottom: 1rem;
+    }
+
+    .chart-card, .table-card {
+        background: var(--card-bg);
+        border-radius: 24px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        backdrop-filter: blur(10px);
+        height: 100%;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 300px;
+        padding: 1rem;
+    }
+
+    .table thead th {
+        background: transparent;
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        border: none;
+        padding: 1rem;
+    }
+
+    .table td {
+        padding: 1rem;
+        border: none;
+        vertical-align: middle;
+    }
+
+    .card-header {
+        background: transparent;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        padding: 1.25rem;
+    }
+
+    .branch-badge {
+        background: var(--primary-gradient);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 12px;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    .status-badge {
+        padding: 0.35rem 0.75rem;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    .status-active { background-color: #dcfce7; color: #166534; }
+    .status-pending { background-color: #fef9c3; color: #854d0e; }
+    .status-inactive { background-color: #fee2e2; color: #991b1b; }
+
+    .quick-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .action-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+
+    .action-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(1.1);
+        text-decoration: none;
+        color: white;
+    }
+
+    .quick-actions-card {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 15px;
+        background: var(--card-bg);
+        border-radius: 24px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        backdrop-filter: blur(10px);
+        padding: 20px;
+    }
+
+    .quick-action-item {
+        text-align: center;
+    }
+
+    .quick-action-link {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 15px;
+        background: linear-gradient(135deg, #f0f9ff 0%, #e6f7ff 100%);
+        border-radius: 12px;
+        text-decoration: none;
+        color: #3a5c96;
+        transition: all 0.3s ease;
+        height: 100%;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .quick-action-link:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+        text-decoration: none;
+        color: #3a5c96;
+    }
+
+    .quick-action-link i {
+        font-size: 24px;
+        margin-bottom: 10px;
+    }
+
+    .quick-action-link span {
+        font-weight: 500;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <!-- Header Section -->
+    <div class="dashboard-header">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h1 class="display-5 mb-0">
+                {% if is_branch_view %}
+                    Branch Dashboard
+                {% else %}
+                    Company Dashboard
+                {% endif %}
+            </h1>
+            {% if is_branch_view and user_branch %}
+                <span class="branch-badge">
+                    <i class="fas fa-building me-2"></i>{{ user_branch.name }}
+                </span>
+            {% endif %}
+        </div>
+        <p class="text-muted mb-0">
+            {% if is_branch_view %}
+                Branch performance metrics and analytics
+            {% else %}
+                Company-wide performance overview
+            {% endif %}
+        </p>
+    </div>
+
+    <!-- Metric Cards -->
+    <div class="row g-4 mb-4">
+        <!-- Policy Holders Card -->
+        <div class="col-md-3">
+            <div class="metric-card policy-card p-4 text-white">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="metric-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="metric-title">Policy Holders</div>
+                        <div class="metric-value">{{ company_report.total_policy_holders }}</div>
+                        <div class="metric-subtitle">
+                            {% if is_branch_view %}
+                                Active in branch
+                            {% else %}
+                                Total across company
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="quick-actions">
+                        <a href="{% url 'admin:app_policyholder_add' %}" class="action-btn" title="Add New Policyholder">
+                            <i class="fas fa-plus"></i>
+                        </a>
+                        <a href="{% url 'admin:app_policyholder_changelist' %}" class="action-btn" title="View All Policyholders">
+                            <i class="fas fa-search"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Policies Card -->
+        <div class="col-md-3">
+            <div class="metric-card premium-card p-4 text-white">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="metric-icon">
+                            <i class="fas fa-file-contract"></i>
+                        </div>
+                        <div class="metric-title">Active Policies</div>
+                        <div class="metric-value">{{ company_report.active_policy_holders }}</div>
+                        <div class="metric-subtitle">Currently active</div>
+                    </div>
+                    <div class="quick-actions">
+                        <a href="{% url 'admin:app_insurancepolicy_changelist' %}" class="action-btn" title="Manage Policies">
+                            <i class="fas fa-cog"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Premiums Card -->
+        <div class="col-md-3">
+            <div class="metric-card agent-card p-4 text-white">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="metric-icon">
+                            <i class="fas fa-wallet"></i>
+                        </div>
+                        <div class="metric-title">Total Premiums</div>
+                        <div class="metric-value">
+                            <span class="currency-prefix">Rs.</span>
+                            {{ company_report.total_premiums|floatformat:0 }}
+                        </div>
+                        <div class="metric-subtitle">Revenue collected</div>
+                    </div>
+                    <div class="quick-actions">
+                        <a href="{% url 'admin:app_premiumpayment_add' %}" class="action-btn" title="Add Payment">
+                            <i class="fas fa-plus"></i>
+                        </a>
+                        <a href="{% url 'admin:app_premiumpayment_changelist' %}" class="action-btn" title="View All Payments">
+                            <i class="fas fa-list"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Outstanding Premiums Card -->
+        <div class="col-md-3">
+            <div class="metric-card outstanding-card p-4 text-white">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="metric-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="metric-title">Outstanding</div>
+                        <div class="metric-value">
+                            <span class="currency-prefix">Rs.</span>
+                            {{ company_report.outstanding_premiums|floatformat:0 }}
+                        </div>
+                        <div class="metric-subtitle">Pending payments</div>
+                    </div>
+                    <div class="quick-actions">
+                        <a href="{% url 'admin:app_premiumpayment_changelist' %}?payment_status__exact=Pending" class="action-btn" title="View Pending Payments">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="quick-actions-card">
+                <div class="quick-action-item">
+                    <a href="{% url 'admin:app_claimrequest_add' %}" class="quick-action-link">
+                        <i class="fas fa-file-invoice"></i>
+                        <span>New Claim</span>
+                    </a>
+                </div>
+                <div class="quick-action-item">
+                    <a href="{% url 'admin:app_loan_add' %}" class="quick-action-link">
+                        <i class="fas fa-hand-holding-usd"></i>
+                        <span>New Loan</span>
+                    </a>
+                </div>
+                <div class="quick-action-item">
+                    <a href="{% url 'admin:app_agentapplication_add' %}" class="quick-action-link">
+                        <i class="fas fa-user-tie"></i>
+                        <span>New Agent</span>
+                    </a>
+                </div>
+                <div class="quick-action-item">
+                    <a href="{% url 'admin:app_salesagent_changelist' %}" class="quick-action-link">
+                        <i class="fas fa-users"></i>
+                        <span>Agents</span>
+                    </a>
+                </div>
+                
+                <div class="quick-action-item">
+                    <a href="{% url 'admin:app_mortalityrate_changelist' %}" class="quick-action-link">
+                        <i class="fas fa-calculator"></i>
+                        <span>Mortality Rates</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    {% if not is_branch_view %}
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="chart-card">
+                <div class="card-header">
+                    <h5 class="card-title">Branch Performance</h5>
+                </div>
+                <div class="chart-container">
+                    <canvas id="branchChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="chart-card">
+                <div class="card-header">
+                    <h5 class="card-title">Policy Distribution</h5>
+                </div>
+                <div class="chart-container">
+                    <canvas id="policyDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Tables Row -->
+    <div class="row g-4">
+        {% if not is_branch_view %}
+        <div class="col-md-6">
+            <div class="table-card">
+                <div class="card-header">
+                    <h5 class="card-title">Branch Reports</h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Branch</th>
+                                <th>Policies</th>
+                                <th>Premiums</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for branch in branch_reports %}
+                            <tr>
+                                <td class="fw-medium">{{ branch.branch_name }}</td>
+                                <td>{{ branch.total_policies }}</td>
+                                <td>Rs.{{ branch.total_premiums|floatformat:2 }}</td>
+                                <td>
+                                    <span class="status-badge status-active">Active</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="{% if is_branch_view %}col-md-12{% else %}col-md-6{% endif %}">
+            <div class="table-card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        {% if is_branch_view %}
+                            Branch Agents Performance
+                        {% else %}
+                            Sales Agent Reports
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Agent</th>
+                                <th>Policies Sold</th>
+                                <th>Premiums</th>
+                                
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for agent in sales_agent_reports %}
+                            <tr>
+                                <td class="fw-medium">{{ agent.agent_name }}</td>
+                                <td>{{ agent.policies_sold }}</td>
+                                <td>Rs.{{ agent.premium_collected|floatformat:2 }}</td>
+                                
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extrajs %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+    Chart.defaults.font.size = 13;
+    Chart.defaults.plugins.legend.labels.usePointStyle = true;
+    
+    // Branch Performance Chart
+    const branchCtx = document.getElementById('branchChart').getContext('2d');
+    new Chart(branchCtx, {
+        type: 'bar',
+        data: {
+            labels: [{% for branch in branch_reports %}'{{ branch.branch_name }}',{% endfor %}],
+            datasets: [{
+                label: 'Total Policies',
+                data: [{% for branch in branch_reports %}{{ branch.total_policies }},{% endfor %}],
+                backgroundColor: [
+                    'rgba(99, 102, 241, 0.8)',
+                    'rgba(16, 185, 129, 0.8)',
+                    'rgba(59, 130, 246, 0.8)',
+                    'rgba(139, 92, 246, 0.8)',
+                    'rgba(14, 165, 233, 0.8)'
+                ],
+                borderRadius: 8,
+                borderSkipped: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    align: 'end'
+                }
+            },
+            scales: {
+                y: {
+                    grid: {
+                        display: true,
+                        drawBorder: false,
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    },
+                    ticks: {
+                        padding: 10
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        padding: 10
+                    }
+                }
+            }
+        }
+    });
+
+    // Policy Distribution Chart
+    const policyCtx = document.getElementById('policyDistributionChart').getContext('2d');
+    new Chart(policyCtx, {
+        type: 'doughnut',
+        data: {
+            labels: [{% for branch in branch_reports %}'{{ branch.branch_name }}',{% endfor %}],
+            datasets: [{
+                data: [{% for branch in branch_reports %}{{ branch.total_policies }},{% endfor %}],
+                backgroundColor: [
+                    'rgba(99, 102, 241, 0.8)',
+                    'rgba(16, 185, 129, 0.8)',
+                    'rgba(59, 130, 246, 0.8)',
+                    'rgba(139, 92, 246, 0.8)',
+                    'rgba(14, 165, 233, 0.8)'
+                ],
+                borderWidth: 0,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true,
+                        pointStyle: 'circle'
+                    }
+                }
+            },
+            cutout: '65%'
+        }
+    });
+});
+</script>
+{% endblock %}
