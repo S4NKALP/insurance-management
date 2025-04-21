@@ -181,7 +181,7 @@ JAZZMIN_SETTINGS = {
         "app": [  
             {
                 "name": "Dashboard",
-                "url": "dashboard", 
+                "url": "/api/dashboard/", 
                 "icon": "fas fa-chart-line", 
             },
         ],
@@ -190,13 +190,13 @@ JAZZMIN_SETTINGS = {
      "order_with_respect_to": ["auth", "dashboard", "app"],
     "topmenu_links": [
         # Add a dashboard link to the top menu
-        {"name": "Dashboard", "url": "dashboard", "permissions": ["auth.view_user"]},
+        {"name": "Dashboard", "url": "/api/dashboard/", "permissions": ["auth.view_user"]},
         {"app": "app"},  
     ],
     "copyright": "Sajha Life Insurance LTD",
     "usermenu_links": [
         # Add dashboard to the user dropdown menu
-        {"name": "Dashboard", "url": "dashboard", "icon": "fas fa-home"},
+        {"name": "Dashboard", "url": "/api/dashboard/", "icon": "fas fa-home"},
     ],
     "icons": {
         # Occupation & Risk Models

@@ -16,19 +16,16 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from InsuranceBackend.settings import MEDIA_ROOT, MEDIA_URL#, STATIC_URL, STATIC_ROOT
+from InsuranceBackend.settings import MEDIA_ROOT, MEDIA_URL
 from django.conf.urls.static import static
+from app.admin import insurance_admin_site
 
 urlpatterns = [
-    # path('admin/', admin.site.urls),
+    # API routes first
     path('api/', include('app.urls')),
     path("ckeditor5/", include('django_ckeditor_5.urls')),
-
+    # Admin routes last to avoid catching API routes
+    path('', insurance_admin_site.urls, name='admin'),
 ]
 
-
-# urlpatterns += static(STATIC_URL, document_root=STATIC_ROOT)
-
 urlpatterns += static(MEDIA_URL, document_root=MEDIA_ROOT)
-
-urlpatterns.append(path('', admin.site.urls, name='admin'))

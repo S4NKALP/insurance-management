@@ -14,7 +14,7 @@ from django.template.response import TemplateResponse
 from decimal import Decimal
 from datetime import timedelta
 from django.db.models import Sum
-from .views import manage_mortality_rates  
+from .views import manage_mortality_rates
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from .frontend_data import *
 from .models import (
@@ -22,6 +22,187 @@ from .models import (
     ClaimRequest, ClaimProcessing, PremiumPayment,MortalityRate,
     EmployeePosition, Employee, PaymentProcessing, Branch, Company, AgentReport, AgentApplication, Occupation, DurationFactor, GSVRate, SSVConfig, Bonus, BonusRate, Loan, LoanRepayment,UserProfile
 )
+
+class InsuranceAdminSite(admin.AdminSite):
+    def get_app_list(self, request, app_label=None):
+        app_list = super().get_app_list(request, app_label)
+
+        model_map = {
+            # Policy Management
+            "InsurancePolicy": {
+                "group": "Policy Management",
+                "group_label": "policy_management",
+                "display_name": "Insurance Policies"
+            },
+            "PolicyHolder": {
+                "group": "Policy Management",
+                "group_label": "policy_management",
+                "display_name": "Policy Holders"
+            },
+            "Underwriting": {
+                "group": "Policy Management",
+                "group_label": "policy_management",
+                "display_name": "Underwriting"
+            },
+            "MortalityRate": {
+                "group": "Policy Management",
+                "group_label": "policy_management",
+                "display_name": "Mortality Rates"
+            },
+            
+            # Financial Management
+            "PremiumPayment": {
+                "group": "Financial Management",
+                "group_label": "financial_management",
+                "display_name": "Premium Payments"
+            },
+            "PaymentProcessing": {
+                "group": "Financial Management",
+                "group_label": "financial_management",
+                "display_name": "Payment Processing"
+            },
+            "Loan": {
+                "group": "Financial Management",
+                "group_label": "financial_management",
+                "display_name": "Loans"
+            },
+            "LoanRepayment": {
+                "group": "Financial Management",
+                "group_label": "financial_management",
+                "display_name": "Loan Repayments"
+            },
+            "Bonus": {
+                "group": "Financial Management",
+                "group_label": "financial_management",
+                "display_name": "Bonuses"
+            },
+            "BonusRate": {
+                "group": "Financial Management",
+                "group_label": "financial_management",
+                "display_name": "Bonus Rates"
+            },
+
+            # Claims Management
+            "ClaimRequest": {
+                "group": "Claims Management",
+                "group_label": "claims_management",
+                "display_name": "Claim Requests"
+            },
+            "ClaimProcessing": {
+                "group": "Claims Management",
+                "group_label": "claims_management",
+                "display_name": "Claim Processing"
+            },
+
+            # Agent Management
+            "SalesAgent": {
+                "group": "Agent Management",
+                "group_label": "agent_management",
+                "display_name": "Sales Agents"
+            },
+            "AgentApplication": {
+                "group": "Agent Management",
+                "group_label": "agent_management",
+                "display_name": "Agent Applications"
+            },
+            "AgentReport": {
+                "group": "Agent Management",
+                "group_label": "agent_management",
+                "display_name": "Agent Reports"
+            },
+
+            # Organization Management
+            "Company": {
+                "group": "Organization",
+                "group_label": "organization",
+                "display_name": "Companies"
+            },
+            "Branch": {
+                "group": "Organization",
+                "group_label": "organization",
+                "display_name": "Branches"
+            },
+            "Employee": {
+                "group": "Organization",
+                "group_label": "organization",
+                "display_name": "Employees"
+            },
+            "EmployeePosition": {
+                "group": "Organization",
+                "group_label": "organization",
+                "display_name": "Employee Positions"
+            },
+
+            # User Management
+            "User": {
+                "group": "User Management",
+                "group_label": "user_management",
+                "display_name": "Users"
+            },
+            "UserProfile": {
+                "group": "User Management",
+                "group_label": "user_management",
+                "display_name": "User Profiles"
+            },
+        }
+
+        # If app_label is specified, return only that app
+        if app_label:
+            for app in app_list:
+                if app["app_label"] == app_label:
+                    return [app]
+            return []
+
+        # Initialize grouped app list with dashboard
+        grouped_app_list = [{"name": "Dashboard", "app_label": "dashboard", "models": []}]
+        grouped_models = {}
+
+        # Group models according to the mapping
+        for app in app_list:
+            for model in app["models"]:
+                model_name = model["object_name"]
+                if model_name in model_map:
+                    group = model_map[model_name]["group"]
+                    if group not in grouped_models:
+                        grouped_models[group] = {
+                            "name": group,
+                            "app_label": model_map[model_name]["group_label"],
+                            "models": [],
+                        }
+
+                    # Apply custom display name
+                    if "display_name" in model_map[model_name]:
+                        model["name"] = model_map[model_name]["display_name"]
+
+                    grouped_models[group]["models"].append(model)
+
+        # Create dashboard item
+        dashboard_item = {
+            "name": "Dashboard",
+            "app_label": "dashboard",
+            "models": [
+                {
+                    "name": "Dashboard",
+                    "object_name": "Dashboard",
+                    "perms": {"has_module_perms": True},
+                    "admin_url": "/api/dashboard/",
+                    "view_only": True,
+                }
+            ],
+        }
+
+        # Combine all groups
+        grouped_app_list = [dashboard_item] + list(grouped_models.values())
+
+        return grouped_app_list
+
+    site_header = "Insurance Management System"
+    site_title = "Insurance Management"
+    index_title = "Welcome to Insurance Management System"
+
+
+# Create instance of custom admin site
+insurance_admin_site = InsuranceAdminSite(name="insurance_admin")
 
 
 # Mixin for filtering 'Branch' and 'user' fields
@@ -46,7 +227,7 @@ class BranchFilterMixin:
 
 #Register occupation
 
-@admin.register(Occupation)
+@admin.register(Occupation, site=insurance_admin_site)
 class OccupationAdmin(admin.ModelAdmin):
     list_display = ('name', 'risk_category')
     list_filter = ('risk_category',)
@@ -62,7 +243,7 @@ class SSVConfigInline(admin.TabularInline):
 
     
 # Register Insurance Policy
-@admin.register(InsurancePolicy)
+@admin.register(InsurancePolicy, site=insurance_admin_site)
 class InsurancePolicyAdmin(admin.ModelAdmin):
     list_display = ('name', 'min_sum_assured', 'max_sum_assured')
     search_fields = ('name', 'policy_type')
@@ -98,7 +279,7 @@ class InsurancePolicyAdmin(admin.ModelAdmin):
         return super().response_add(request, obj, post_url_continue)
 
 #Bonus Rate Admin
-@admin.register(BonusRate)
+@admin.register(BonusRate, site=insurance_admin_site)
 class BonusRateAdmin(admin.ModelAdmin):
     list_display = ('year', 'policy_type', 'min_year', 'max_year', 'bonus_per_thousand')
     ordering = ['year', 'policy_type', 'min_year']
@@ -114,7 +295,7 @@ class AgentReportInline(admin.TabularInline):
     verbose_name_plural = "Agent Reports"
 # Register Sales Agent
 
-@admin.register(SalesAgent)
+@admin.register(SalesAgent, site=insurance_admin_site)
 class SalesAgentAdmin(BranchFilterMixin,admin.ModelAdmin):
     list_display = ('id', 'agent_code', 'get_application_name', 'is_active', 'commission_rate', 'joining_date')
     search_fields = ('agent_code', 'application__first_name', 'application__last_name')
@@ -141,7 +322,7 @@ class SalesAgentAdmin(BranchFilterMixin,admin.ModelAdmin):
         super().save_model(request, obj, form, change)
         
 #Bonus inline for the policyholder
-class BonusAdmin(admin.ModelAdmin):
+class BonusAdmin(admin.ModelAdmin,):
     list_display = ('id', 'policyholder', 'bonus_amount', 'bonus_date')
     list_filter = ('bonus_date',)
     search_fields = ('policyholder__first_name', 'policyholder__last_name')
@@ -167,7 +348,7 @@ class UnderwritingInline(admin.StackedInline):
     readonly_fields = ( 'risk_category', 'last_updated_by', 'last_updated_at')
 
     
-@admin.register(PolicyHolder)
+@admin.register(PolicyHolder, site=insurance_admin_site)
 class PolicyHolderAdmin(BranchFilterMixin, admin.ModelAdmin):
     list_display = ('policy_number','first_name', 'last_name', 'status', 'policy', 'sum_assured', 
                     'payment_interval', 'occupation', 'maturity_date','print_button')
@@ -344,7 +525,7 @@ class PolicyHolderAdmin(BranchFilterMixin, admin.ModelAdmin):
 
 
 # Register Claim Request
-@admin.register(ClaimRequest)
+@admin.register(ClaimRequest, site=insurance_admin_site)
 class ClaimRequestAdmin(admin.ModelAdmin, BranchFilterMixin):
     list_display = ('policy_holder', 'claim_date', 'status', 'claim_amount')
     readonly_fields = ('claim_amount',)
@@ -359,7 +540,7 @@ class ClaimRequestAdmin(admin.ModelAdmin, BranchFilterMixin):
 
 
 # Register Claim Processing
-@admin.register(ClaimProcessing)
+@admin.register(ClaimProcessing, site=insurance_admin_site)
 class ClaimProcessingAdmin(admin.ModelAdmin, BranchFilterMixin):
     list_display = ('claim_request', 'processing_status', 'processing_date')
     search_fields = ('claim_request__policy_holder__first_name', 'claim_request__policy_holder__last_name')
@@ -387,7 +568,7 @@ class PremiumPaymentForm(forms.ModelForm):
 
 
 # Register Duration Factor
-@admin.register(DurationFactor)
+@admin.register(DurationFactor, site=insurance_admin_site)
 class DurationFactorAdmin(admin.ModelAdmin):
     list_display = ( 'policy_type', 'min_duration', 'max_duration', 'factor')
     list_filter = ( 'policy_type', 'factor')
@@ -396,7 +577,7 @@ class DurationFactorAdmin(admin.ModelAdmin):
     
 # Register Premium Payment
 
-@admin.register(PremiumPayment)
+@admin.register(PremiumPayment, site=insurance_admin_site)
 class PremiumPaymentAdmin(admin.ModelAdmin):
     list_display = (
         'policy_holder', 'annual_premium', 'total_premium', 'interval_payment',
@@ -461,7 +642,7 @@ class PremiumPaymentAdmin(admin.ModelAdmin):
 
 
 # Register Employee Position
-@admin.register(EmployeePosition)
+@admin.register(EmployeePosition, site=insurance_admin_site)
 class EmployeePositionAdmin(admin.ModelAdmin):
     list_display = ('id', 'position')
     search_fields = ('position',)
@@ -469,7 +650,7 @@ class EmployeePositionAdmin(admin.ModelAdmin):
 
 
 # Register Employee
-@admin.register(Employee)
+@admin.register(Employee, site=insurance_admin_site)
 class EmployeeAdmin(BranchFilterMixin, admin.ModelAdmin):
     list_display = ('id', 'name', 'address', 'gender', 'date_of_birth', 'employee_position')
     list_filter = ('gender', 'employee_position')
@@ -484,7 +665,7 @@ class EmployeeAdmin(BranchFilterMixin, admin.ModelAdmin):
 
 
 # Register Payment Processing
-@admin.register(PaymentProcessing)
+@admin.register(PaymentProcessing, site=insurance_admin_site)
 class PaymentProcessingAdmin(admin.ModelAdmin, BranchFilterMixin):
     list_display = ('name', 'processing_status', 'date_of_processing')
     search_fields = ('name', 'claim_request__policy_holder__first_name')
@@ -499,7 +680,7 @@ class PaymentProcessingAdmin(admin.ModelAdmin, BranchFilterMixin):
 
 # agent application
 
-@admin.register(AgentApplication)
+@admin.register(AgentApplication, site=insurance_admin_site)
 class AgentApplicationAdmin(BranchFilterMixin,admin.ModelAdmin):
     list_display = ('id', 'first_name', 'last_name', 'branch', 'email', 'phone_number', 'status', 'created_at')
     search_fields = ('first_name', 'last_name', 'email', 'phone_number')
@@ -533,7 +714,7 @@ class AgentApplicationAdmin(BranchFilterMixin,admin.ModelAdmin):
             obj.branch = getattr(request.user.profile, 'branch', None)
         super().save_model(request, obj, form, change)
         
-@admin.register(MortalityRate)
+@admin.register(MortalityRate, site=insurance_admin_site)
 class MortalityRateAdmin(admin.ModelAdmin):
     list_display = ('age_range_display', 'rate', 'edit_button')
     search_fields = ('age_group_start', 'age_group_end')
@@ -618,6 +799,7 @@ class MortalityRateAdmin(admin.ModelAdmin):
                     bulk_form = MortalityRateBulkForm(age_ranges=age_ranges)
                     
                     context = {
+                        **insurance_admin_site.each_context(request),
                         'form': form,
                         'generated_ranges': age_ranges,
                         'bulk_form': bulk_form,
@@ -665,6 +847,7 @@ class MortalityRateAdmin(admin.ModelAdmin):
         # Default behavior for GET requests
         generator_form = MortalityRateGeneratorForm()
         context = {
+            **insurance_admin_site.each_context(request),
             'form': form,
             'generator_form': generator_form,
             'show_generator': True,
@@ -688,26 +871,26 @@ class MortalityRateAdmin(admin.ModelAdmin):
         )
 
 #Loan Admin
-@admin.register(Loan)
+@admin.register(Loan, site=insurance_admin_site)
 class LoanAdmin(admin.ModelAdmin, BranchFilterMixin):
     list_display = ('policy_holder', 'loan_amount', 'remaining_balance', 'accrued_interest', 'loan_status', 'created_at')
     readonly_fields = ('remaining_balance', 'accrued_interest', 'last_interest_date')
     search_fields = ('policy_holder__first_name', 'policy_holder__last_name')
     
 #Loan Repayment Admin
-@admin.register(LoanRepayment)
+@admin.register(LoanRepayment, site=insurance_admin_site)
 class LoanRepaymentAdmin(BranchFilterMixin, admin.ModelAdmin):
     list_display = ('loan', 'amount', 'repayment_type', 'repayment_date', 'remaining_loan_balance')
     readonly_fields = ('remaining_loan_balance',)
 
 
-@admin.register(Company)
+@admin.register(Company, site=insurance_admin_site)
 class CompanyAdmin(admin.ModelAdmin):
     list_display = ('name', 'company_code', 'email', 'is_active')
     search_fields = ('name', 'company_code')
     list_filter = ('is_active',)
 
-@admin.register(Branch)
+@admin.register(Branch, site=insurance_admin_site)
 class BranchAdmin(admin.ModelAdmin):
     list_display = ('name', 'branch_code', 'location', 'action_buttons')
     search_fields = ('name', 'branch_code')
@@ -788,6 +971,7 @@ class BranchAdmin(admin.ModelAdmin):
             total_loans = loans.aggregate(total=Sum('loan_amount'))['total'] or 0
             
             context = {
+                **insurance_admin_site.each_context(request),
                 'title': title,
                 'branch': branch,
                 'company_name': company_name,
@@ -836,7 +1020,7 @@ class BranchAdmin(admin.ModelAdmin):
             kwargs["queryset"] = Branch.objects.filter(id=request.user.profile.branch.id)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
-@admin.register(UserProfile)
+@admin.register(UserProfile, site=insurance_admin_site)
 class UserProfileAdmin(admin.ModelAdmin):
     list_display = ('user', 'branch', 'company')
     search_fields = ('user__username', 'branch__name', 'company__name')
@@ -860,7 +1044,7 @@ class UserProfileAdmin(admin.ModelAdmin):
 
 admin.site.unregister(User)
 
-@admin.register(User)
+@admin.register(User, site=insurance_admin_site)
 class CustomUserAdmin(BaseUserAdmin):
     list_display = ('username', 'email', 'is_superuser', 'get_branch')
     search_fields = ('username', 'email')
@@ -881,4 +1065,6 @@ class CustomUserAdmin(BaseUserAdmin):
             if first_company:
                 obj.profile.company = first_company
                 obj.profile.save()
+    
+
     

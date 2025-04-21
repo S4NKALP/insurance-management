@@ -15,6 +15,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.contrib.admin import site
+# from django.contrib import admin
 
 
 def handle_image_update(instance, field_name, request_data):
@@ -632,17 +633,26 @@ def is_superuser(user):
 @login_required
 def dashboard_view(request):
     """View for displaying the dashboard based on user permissions."""
+    # Import here to avoid circular import
+    from .admin import insurance_admin_site
+    
     dashboard = Dashboard(request.user)
     
+    
+    # Add our dashboard data
     context = {
-        **site.each_context(request),
+        **insurance_admin_site.each_context(request),
         'title': 'Dashboard',
         'branch_reports': dashboard.get_branch_reports(),
         'company_report': dashboard.get_company_report(),
         'sales_agent_reports': dashboard.get_sales_agent_reports(),
         'is_branch_view': not request.user.is_superuser,
         'user_branch': getattr(request.user, 'branch', None),
+        'has_permission': True,
+        'is_popup': False,
+        'is_nav_sidebar_enabled': True,
     }
+    
     return render(request, 'dashboard.html', context)
 
 def manage_mortality_rates(request):
