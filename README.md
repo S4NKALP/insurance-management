@@ -126,7 +126,7 @@ The system follows Django's MVT (Model-View-Template) architecture with:
 <ol>
   <li>
     <b>Clone repository</b>
-    <pre><code>git clone https://github.com/nurpratapkarki/insurance-management.git
+    <pre><code>git clone https://github.com/nurpratapkarki/insurance-management-r.git
 cd insurance-management</code></pre>
   </li>
   <li>
