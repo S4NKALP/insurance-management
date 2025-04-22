@@ -289,8 +289,7 @@ class AgentApplication(models.Model):
         ]
 
 
-# Insurance Policy ends
-
+# Agent Application ends
 # Sales Agent
 
 
@@ -682,11 +681,6 @@ class Bonus(models.Model):
             policy = self.policy_holder.policy
             duration = self.policy_holder.duration_years
             sum_assured = self.policy_holder.sum_assured
-
-            logger.info(
-                f"Policy: {policy}, Duration: {duration}, Sum Assured: {sum_assured}"
-            )
-
             # Fetch applicable bonus rate
             bonus_rate_obj = BonusRate.get_bonus_rate(policy.policy_type, duration)
 

@@ -123,7 +123,7 @@ def update_policy_holder_payment_status(sender, instance, **kwargs):
         policy_holder = instance.policy_holder
         
         # Calculate new status based on payment amounts
-        if instance.total_paid >= instance.total_premium_due:
+        if instance.total_paid >= instance.remaining_premium:
             new_status = 'Paid'
         elif instance.total_paid > 0:
             new_status = 'Partially Paid'
