@@ -117,11 +117,14 @@ The system follows Django's MVT (Model-View-Template) architecture with:
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - Python 3.8+
 - MySQL13+
 - Git
 
 ### Installation
+
+#### 1. Using Traditional Method
 
 <ol>
   <li>
@@ -134,6 +137,7 @@ cd insurance-management</code></pre>
     <pre><code>python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate</code></pre>
   </li>
+
   <li>
     <b>Install dependencies</b>
     <pre><code>pip install -r requirements.txt</code></pre>
@@ -147,7 +151,8 @@ DATABASE_URL=postgres://username:password@localhost:5432/insurance_db</code></pr
   </li>
   <li>
     <b>Run migrations</b>
-    <pre><code>python manage.py migrate</code></pre>
+    <pre><code>python manage.py makemigrations
+python manage.py migrate</code></pre>
   </li>
   <li>
     <b>Create admin user</b>
@@ -156,6 +161,32 @@ DATABASE_URL=postgres://username:password@localhost:5432/insurance_db</code></pr
   <li>
     <b>Launch server</b>
     <pre><code>python manage.py runserver</code></pre>
+    Visit <code>http://localhost:8000/admin/</code> to access the system.
+  </li>
+</ol>
+
+#### 2. Using UV
+
+<ol>
+<li><b>Install UV (if not already installed).</b>
+<pre><code>pip install uv
+curl -LsSf https://astral.sh/uv/install.sh | sh # For Linux/Mac
+irm https://astral.sh/uv/install.ps1 | iex  # For Windows
+</code></pre><b>Check UV [docs](https://docs.astral.sh/uv/) for more info.</b>
+</li>
+
+<li>
+<b>Run migrations</b>
+<pre><code>uv run manage.py makemigrations
+uv run manage.py migrate</code></pre>
+</li>
+
+<li><b>Create admin user</b>
+<pre><code>uv run manage.py createsuperuser</code></pre></li>
+
+<li>
+    <b>Launch server</b>
+    <pre><code>uv run manage.py runserver</code></pre>
     Visit <code>http://localhost:8000/admin/</code> to access the system.
   </li>
 </ol>
@@ -249,6 +280,7 @@ DATABASE_URL=postgres://username:password@localhost:5432/insurance_db</code></pr
 ## 👩‍💼 Admin Guide
 
 ### Main Administrative Sections
+
 - **Dashboard** - `/admin/`
 - **Policy Management** - `/admin/app/policyholder/`
 - **Premium Management** - `/admin/app/premiumpayment/`
@@ -259,6 +291,7 @@ DATABASE_URL=postgres://username:password@localhost:5432/insurance_db</code></pr
 - **Reporting** - Various report-specific URLs
 
 ### Special Features
+
 - **Surrender Certificate Printing** - Available from surrender detail page
 - **Policy Renewal** - Access via renewal list page
 - **OTP Authentication** - For sensitive operations
@@ -275,11 +308,11 @@ DATABASE_URL=postgres://username:password@localhost:5432/insurance_db</code></pr
 ## ⚖️ Regulatory Compliance
 
 Designed specifically for Nepal's insurance market:
+
 - **Beema Samiti (Insurance Board)** compliance
 - **Nepal-specific tax handling** (VAT, service tax, TDS)
 - **Required regulatory documentation**
 - **Statutory reporting**
-
 
 ---
 
