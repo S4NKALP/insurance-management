@@ -10,7 +10,7 @@ from django.db.models import Sum, Avg, Count, F
 from typing import Dict, Union
 from django.dispatch import receiver
 import logging
-
+import re
 logger = logging.getLogger(__name__)
 from .constants import (
     GENDER_CHOICES,
@@ -279,7 +279,15 @@ class AgentApplication(models.Model):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
+    def clean(self):
+        """Validate the phone number format."""
+        errors = {}  # Initialize the errors dictionary
+        phone_pattern = r'^\d{10}$'
+        if self.phone_number and not re.match(phone_pattern, self.phone_number):
+            errors["phone_number"] = "Phone number must be exactly 10 digits."
 
+        if errors:
+            raise ValidationError(errors)
     class Meta:
         verbose_name = "Agent Application"
         verbose_name_plural = "Agent Applications"
@@ -510,7 +518,15 @@ class PolicyHolder(models.Model):
     start_date = models.DateField(default=date.today)
 
     maturity_date = models.DateField(null=True, blank=True)
+    def clean(self):
+        """Validate the phone number format."""
+        errors = {}  # Initialize the errors dictionary
+        phone_pattern = r'^\d{10}$'
+        if self.phone_number and not re.match(phone_pattern, self.phone_number):
+            errors["phone_number"] = "Phone number must be exactly 10 digits."
 
+        if errors:
+            raise ValidationError(errors)
     def clean(self):
         errors = {}
         if self.sum_assured:

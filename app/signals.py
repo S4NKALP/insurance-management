@@ -175,19 +175,19 @@ def update_agent_stats_on_new_policy(sender, instance, created, **kwargs):
 @receiver(post_save, sender=PremiumPayment)
 def update_agent_report_and_commission(sender, instance, created, **kwargs):
     """Update agent report and commission when a premium payment is made"""
-    if not instance.policy_holder.agent:
+    agent = instance.policy_holder.agent
+    if not agent:
         return
 
     try:
         with transaction.atomic():
-            agent = instance.policy_holder.agent
             report_date = instance.next_payment_date or timezone.now().date()
-            
+
             # Get or create monthly report
-            report, created = AgentReport.objects.get_or_create(
+            report, _ = AgentReport.objects.get_or_create(
                 agent=agent,
                 branch=agent.branch,
-                report_date=report_date.replace(day=1),  # First day of current month
+                report_date=report_date.replace(day=1),
                 defaults={
                     'reporting_period': f"{report_date.year}-{report_date.month}",
                     'policies_sold': 0,
@@ -199,25 +199,20 @@ def update_agent_report_and_commission(sender, instance, created, **kwargs):
                 }
             )
 
-            if created:
-                # New premium payment
-                commission = (instance.interval_payment * agent.commission_rate / 100)
-                
-                # Update report
-                report.total_premium += instance.interval_payment
-                report.commission_earned += commission
-                
-                # Update agent's total premium collected
-                agent.total_premium_collected += instance.interval_payment
-                agent.save()
-                
-            # Calculate target achievement (assuming monthly target is stored somewhere)
-            # This is a placeholder - adjust according to your target logic
-            if hasattr(agent, 'monthly_target'):
+            # Always calculate & add commission
+            commission = (instance.interval_payment * agent.commission_rate / 100)
+
+            report.total_premium += instance.interval_payment
+            report.commission_earned += commission
+
+            agent.total_premium_collected += instance.interval_payment
+            agent.save()
+
+            # Placeholder target logic
+            if hasattr(agent, 'monthly_target') and agent.monthly_target > 0:
                 report.target_achievement = (report.total_premium / agent.monthly_target) * 100
-                
-            # Calculate renewal rate (if applicable)
-            # This is a placeholder - adjust according to your renewal logic
+
+            # Placeholder renewal logic
             total_policies = PolicyHolder.objects.filter(agent=agent).count()
             renewed_policies = PolicyHolder.objects.filter(
                 agent=agent,
@@ -225,15 +220,15 @@ def update_agent_report_and_commission(sender, instance, created, **kwargs):
                 maturity_date__gte=report_date  
             ).count()
 
-
-            
             if total_policies > 0:
                 report.renewal_rate = (renewed_policies / total_policies) * 100
+
             report.save()
-            
+
+            print(f"✅ Commission of {commission} credited to agent {agent}.")
+
     except Exception as e:
-        print(f"Error in update_agent_report_and_commission signal: {str(e)}")
-        raise
+        print(f"💥 Error in update_agent_report_and_commission signal: {str(e)}")
 
 # # Optional: Add a pre_save signal to validate premium payments
 # @receiver(pre_save, sender=PremiumPayment)
